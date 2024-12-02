@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .container {
+            text-align: center;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        p {
+            margin-top: 10px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Ввод номера телефона -->
+        <div id="phone-auth">
+            <h1>Введите номер телефона</h1>
+            <form id="phone-auth-form">
+                <input type="text" id="phone" name="phone" placeholder="Номер телефона">
+                <button type="submit">Получить код</button>
+            </form>
+        </div>
+
+        <!-- Ввод кода авторизации -->
+        <div id="code-auth" style="display: none;">
+            <h1>Введите код авторизации</h1>
+            <form id="code-auth-form">
+                <input type="text" id="code" name="code" placeholder="Код авторизации">
+                <button type="submit">Войти</button>
+            </form>
+            <p id="message"></p>
+        </div>
+    </div>
+
+    <script>
+        $(document).on('submit', '#phone-auth-form', function (e) {
+            e.preventDefault();
+            const phone = $('#phone').val();
+            localStorage.setItem('phone', phone);
+
+            $.ajax({
+                url: '/api/auth/phone/',
+                method: 'POST',
+                data: JSON.stringify({ phone: phone }),
+                contentType: 'application/json',
+                success: function (data) {
+                    // Сохраняем тестовый код для отображения
+                    $('#message').text('Код отправлен на ваш телефон (Для теста: ' + data.test_auth_code + ')');
+                    
+                    // Переключаем на форму ввода кода
+                    $('#phone-auth').hide();
+                    $('#code-auth').show();
+                },
+                error: function (xhr) {
+                    $('#message').text(xhr.responseJSON.detail || 'Произошла ошибка');
+                }
+            });
+        });
+
+        $(document).on('submit', '#code-auth-form', function (e) {
+            e.preventDefault();
+            const code = $('#code').val();
+
+            $.ajax({
+                url: '/api/auth/code/',
+                method: 'POST',
+                data: JSON.stringify({ phone: localStorage.getItem('phone'), code: code }),
+                contentType: 'application/json',
+                success: function (data) {
+                    $('#message').text(data.detail);
+                    localStorage.setItem('auth_token', data.token); // Сохраняем токен
+                    setTimeout(function () {
+                        window.location.href = '/profile/'; // Переход на профиль
+                    }, 500);
+                },
+                error: function (xhr) {
+                    $('#message').text(xhr.responseJSON.detail || 'Произошла ошибка');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

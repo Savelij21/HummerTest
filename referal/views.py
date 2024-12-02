@@ -21,10 +21,6 @@ import time
 auth_codes = {}
 
 
-class ReferalTemplateView(TemplateView):
-    template_name = 'index.html'
-
-
 class AuthViewSet(viewsets.ViewSet):
 
     @action(methods=['POST'], detail=False)
@@ -55,7 +51,7 @@ class AuthViewSet(viewsets.ViewSet):
 
         if cached_code is None:
             raise ValidationError({'detail': 'Срок действия кода подтверждения истек'})
-        elif code != cached_code:
+        elif int(code) != cached_code:
             raise ValidationError({'detail': 'Неверный код подтверждения'})
 
         # DEV

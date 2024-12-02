@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .container {
+            text-align: center;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .profile-field {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+        .profile-field span {
+            font-weight: bold;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .logout-button {
+            margin-top: 20px;
+            background-color: #dc3545;
+        }
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+        p {
+            margin-top: 10px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Профиль</h1>
+        <div id="profile">
+            <div class="profile-field"><span>Имя пользователя:</span> <span id="username">Загрузка...</span></div>
+            <div class="profile-field"><span>Телефон:</span> <span id="phone">Загрузка...</span></div>
+            <div class="profile-field"><span>Ваш инвайт-код:</span> <span id="invite_code">Загрузка...</span></div>
+            <div class="profile-field"><span>Использованный инвайт-код:</span> <span id="foreign_invite_code">Загрузка...</span></div>
+            <div class="profile-field"><span>Приглашенные пользователи:</span> <span id="invited_users">Загрузка...</span></div>
+        </div>
+        <form id="invite-form">
+            <input type="text" id="foreign_invite_code_input" placeholder="Введите инвайт-код">
+            <button type="submit">Активировать</button>
+        </form>
+        <button id="logout-button" class="logout-button">Выйти из аккаунта</button>
+        <p id="message"></p>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            const token = localStorage.getItem('auth_token');
+
+            // Загружаем профиль
+            $.ajax({
+                url: '/api/profile/',
+                method: 'GET',
+                headers: { Authorization: `Token ${token}` },
+                success: function (data) {
+                    $('#username').text(data.username || 'Не указано');
+                    $('#phone').text(data.phone || 'Не указано');
+                    $('#invite_code').text(data.invite_code || 'Не указано');
+                    $('#foreign_invite_code').text(data.foreign_invite_code || 'Не указано');
+                    $('#invited_users').text(
+                        data.invited_users.length > 0 
+                            ? data.invited_users.join(', ') 
+                            : 'Нет приглашенных пользователей'
+                    );
+                },
+                error: function () {
+                    $('#message').text('Не удалось загрузить профиль');
+                }
+            });
+
+            // Обработка формы активации инвайт-кода
+            $(document).on('submit', '#invite-form', function (e) {
+                e.preventDefault();
+                const foreignInviteCode = $('#foreign_invite_code_input').val();
+
+                $.ajax({
+                    url: '/api/profile/foreign_invite_code/',
+                    method: 'POST',
+                    headers: { Authorization: `Token ${token}` },
+                    data: JSON.stringify({ foreign_invite_code: foreignInviteCode }),
+                    contentType: 'application/json',
+                    success: function (data) {
+                        $('#message').text(data.detail);
+                        $('#username').text(data.user.username || 'Не указано');
+                        $('#phone').text(data.user.phone || 'Не указано');
+                        $('#invite_code').text(data.user.invite_code || 'Не указано');
+                        $('#foreign_invite_code').text(data.user.foreign_invite_code || 'Не указано');
+                        $('#invited_users').text(
+                            data.user.invited_users.length > 0 
+                                ? data.user.invited_users.join(', ') 
+                                : 'Нет приглашенных пользователей'
+                        );
+                    },
+                    error: function (xhr) {
+                        $('#message').text(xhr.responseJSON.detail || 'Ошибка');
+                    }
+                });
+            });
+
+            // Обработка кнопки выхода из аккаунта
+            $(document).on('click', '#logout-button', function () {
+                $.ajax({
+                    url: '/api/logout/',
+                    method: 'POST',
+                    headers: { Authorization: `Token ${token}` },
+                    success: function () {
+                        localStorage.removeItem('auth_token');
+                        window.location.href = '/auth/'; // Переход на auth
+                    },
+                    error: function () {
+                        $('#message').text('Не удалось выйти из аккаунта');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
