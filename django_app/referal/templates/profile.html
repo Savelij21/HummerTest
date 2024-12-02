@@ -149,7 +149,7 @@
                     headers: { Authorization: `Token ${token}` },
                     success: function () {
                         localStorage.removeItem('auth_token');
-                        window.location.href = '/auth/'; // Переход на auth
+                        window.location.href = '/'; // Переход на auth
                     },
                     error: function () {
                         $('#message').text('Не удалось выйти из аккаунта');

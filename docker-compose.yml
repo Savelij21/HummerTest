@@ -1,0 +1,45 @@
+
+
+networks:
+  referal_app_network:
+
+services:
+# ----------------------- BACKEND -----------------------
+
+  django:
+    container_name: django
+    build:
+      context: ./django_app
+      dockerfile: Dockerfile
+    command: gunicorn -c gunicorn_config.py src.wsgi:application
+    restart: unless-stopped
+    volumes:
+      - ./django_app:/usr/src/app
+      - static_volume:/app/static  # Для использования в nginx
+    ports:
+      - "8000:8000" # Порт для Django в порты ОС
+    networks:
+      - referal_app_network
+
+
+# ---------------------------- NGINX --------------------------------
+  nginx:
+    container_name: nginx
+    volumes:
+      - static_volume:/app/static
+      - ./django_app:/usr/src/app
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - '80:80'
+    restart: unless-stopped
+    depends_on:
+       - django
+
+    networks:
+      - referal_app_network
+
+
+volumes:
+  static_volume:
